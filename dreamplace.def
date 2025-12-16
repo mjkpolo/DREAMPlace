@@ -1,0 +1,71 @@
+Bootstrap: docker
+From: pytorch/pytorch:1.7.1-cuda11.0-cudnn8-devel
+
+%files
+
+    . /opt/DREAMPlace
+
+%post
+    set -eux
+
+    # Rotates to the keys used by NVIDIA as of 27-APR-2022.
+    rm -f /etc/apt/sources.list.d/cuda.list || true
+    rm -f /etc/apt/sources.list.d/nvidia-ml.list || true
+    apt-key del 7fa2af80 || true
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
+
+    # System dependencies (apt).
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libfl-dev \
+        libcairo2-dev \
+        libboost-all-dev \
+        ca-certificates \
+        curl
+    rm -rf /var/lib/apt/lists/*
+
+    # Conda dependency.
+    conda install -y -c conda-forge bison
+    conda clean -afy
+
+    # Install cmake (same installer as Dockerfile).
+    mkdir -p /opt/cmake
+    curl -fsSL -o /tmp/cmake-3.21.0-linux-x86_64.sh \
+        https://cmake.org/files/v3.21/cmake-3.21.0-linux-x86_64.sh
+    sh /tmp/cmake-3.21.0-linux-x86_64.sh --prefix=/opt/cmake --skip-license
+    ln -sf /opt/cmake/bin/cmake /usr/local/bin/cmake
+    cmake --version
+    rm -f /tmp/cmake-3.21.0-linux-x86_64.sh
+
+    # Python dependencies.
+    pip install --no-cache-dir \
+        "pyunpack>=0.1.2" \
+        "patool>=1.12" \
+        "matplotlib>=2.2.2" \
+        "cairocffi>=0.9.0" \
+        "pkgconfig>=1.4.0" \
+        "setuptools>=39.1.0" \
+        "scipy>=1.1.0" \
+        "numpy>=1.15.4" \
+        "shapely>=1.7.0"
+
+    # add our build steps
+    cd /opt/DREAMPlace
+    mkdir build
+    pip install -r requirements.txt
+    cd build
+    cmake .. -DPython_EXECUTABLE=$(which python) -DCMAKE_CUDA_FLAGS="-gencode=arch=compute_60,code=sm_60 \
+                   -gencode=arch=compute_80,code=sm_80 \
+                   -gencode=arch=compute_90a,code=sm_90a"
+    make 
+    make install
+
+%environment
+    # Make cmake easy to find (and explicit in runtime env too).
+    export PATH=/opt/cmake/bin:$PATH
+
+%runscript
+    # Default behavior when you "apptainer run"
+    exec "$@"
+
