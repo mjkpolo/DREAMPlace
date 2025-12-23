@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
 
 #SBATCH --time=2:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=128G
 #SBATCH --ntasks=1
-#SBATCH --output=sbatch_dreamplace_%j.out
+#SBATCH --gres=gpu:tesla_v100-pcie-32gb:1
+#SBATCH --output=sbatch_run_%j.out
 
 set -eux
 
-CMD="cd /opt/DREAMPlace/install; \\
-python unittest/ops/hpwl_unittest.py"
-
-echo $CMD
-
 module load apptainer
 
-apptainer exec dreamplace.sif bash -c "$CMD"
+apptainer exec --cwd /opt/DREAMPlace --nv dreamplace.sif python install/dreamplace/Placer.py test/ispd2005/adaptec1.json

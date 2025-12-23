@@ -11,6 +11,7 @@ add_subdirectory(thirdparty/pybind11)
 execute_process(COMMAND ${Python_EXECUTABLE} -c 
   "import torch; print(torch.__path__[0]); print(int(torch.cuda.is_available())); print(torch.__version__);" 
   OUTPUT_VARIABLE TORCH_OUTPUT OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "MARCO: TORCH_OUTPUT:\n${TORCH_OUTPUT}")
 string(REPLACE "\n" ";" TORCH_OUTPUT_LIST ${TORCH_OUTPUT})
 list(GET TORCH_OUTPUT_LIST 0 TORCH_INSTALL_PREFIX)
 list(GET TORCH_OUTPUT_LIST 1 TORCH_ENABLE_CUDA)

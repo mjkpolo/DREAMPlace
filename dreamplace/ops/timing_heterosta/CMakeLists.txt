@@ -24,7 +24,6 @@ set(LINK_LIBS utility_cxx
   OpenMP::OpenMP_CXX
   programoptions
   ${ZLIB_LIBRARIES}
-  ${CUDA_CUDA_LIBRARY}
   stdc++fs
   )
 
